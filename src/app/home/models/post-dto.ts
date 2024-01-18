@@ -1,6 +1,5 @@
 export interface PostDto {
     id: number;
-    userName: string;
     subCategory: string;
     topic: string;
     heading: string;
@@ -11,7 +10,6 @@ export interface PostDto {
 
 export const defaultPost: PostDto = {
     id: 0,
-    userName: "",
     subCategory: "",
     topic: "",
     heading: "",
