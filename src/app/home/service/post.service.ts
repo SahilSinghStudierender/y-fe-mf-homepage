@@ -18,9 +18,9 @@ export class PostService {
 
     constructor(private http: HttpClient) {
     }
-    
-    public getAllPosts(page: number): Observable<PageDto<PostDto>> {
-        return this.http.get<PageDto<PostDto>>(`${environment.backendUrl}/posts?page=${page}&pageSize=${PAGE_SIZE}`);
+
+    public getAllPosts(page: number, sort: "desc" | "asc" = "desc"): Observable<PageDto<PostDto>> {
+        return this.http.get<PageDto<PostDto>>(`${environment.backendUrl}/posts?page=${page}&pageSize=${PAGE_SIZE}&sort=${sort}`);
     }
 
     public getPostsByTitleSearch(title: string): Observable<PostDto[]> {
