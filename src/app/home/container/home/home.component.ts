@@ -19,11 +19,13 @@ export class HomeComponent implements OnDestroy {
     public topics: string[] = [];
     public subcategories: SubcategoriesDto[] = [];
     public inputSubscription: Subscription;
+    private isFiltered = false;
     public searchInput = new FormControl("");
     public defaultSubCategoryId = -1;
     private currentPage = 0;
     private scrollSubscription?: Subscription;
     private gotLastPage = false;
+    public sortDirection: "desc" | "asc" = "desc";
     showEditor = false;
     form = new FormGroup({
         title: new FormControl("", Validators.required),
@@ -33,14 +35,14 @@ export class HomeComponent implements OnDestroy {
     });
 
     constructor(private postService: PostService,
-                // private toastService: AppToastService,
+                // private toastService: AppToastService
     ) {
         // Setup Infinite Scroll
         const scrollEvents = fromEvent(window, "scroll");
         this.scrollSubscription = scrollEvents.pipe(
             debounceTime(200)  // Adjust debounce time as necessary
         ).subscribe(() => {
-            if (this.isNearBottom() && !this.loading && !this.gotLastPage) {
+            if (this.isNearBottom() && !this.loading && !this.gotLastPage && !this.isFiltered) {
                 this.loadMorePosts();
             }
         });
@@ -51,7 +53,10 @@ export class HomeComponent implements OnDestroy {
             distinctUntilChanged(),
         ).subscribe((value) => {
             if (!value) {
-                this.getAllPosts();
+                this.currentPage = 0;
+                this.isFiltered = false;
+
+                this.getAllPosts(true);
                 return;
             }
 
@@ -60,6 +65,7 @@ export class HomeComponent implements OnDestroy {
                 this.postService.getPostsByTitleSearch(value).subscribe({
                     next: (result) => {
                         this.posts = result;
+                        this.isFiltered = true;
                     },
                     error: (err) => {
                         console.log("Error fetching by Title", err);
@@ -77,15 +83,20 @@ export class HomeComponent implements OnDestroy {
 
     ngOnDestroy() {
         this.inputSubscription.unsubscribe();
+        this.scrollSubscription?.unsubscribe();
     }
 
-    private getAllPosts() {
+    private getAllPosts(resetPosts = false) {
         // Get all Posts as default
         this.loading = true;
         setTimeout(() => {
-            this.postService.getAllPosts(this.currentPage).subscribe({
+            this.postService.getAllPosts(this.currentPage, this.sortDirection).subscribe({
                 next: (page) => {
-                    this.posts.push(...page.value);
+                    if(resetPosts) {
+                        this.posts = page.value;
+                    } else {
+                        this.posts.push(...page.value);
+                    }
                     this.gotLastPage = page.isLastPage;
                 },
                 error: (error) => {
@@ -196,6 +207,12 @@ export class HomeComponent implements OnDestroy {
         const position = window.innerHeight + window.scrollY;
         const height = document.body.offsetHeight;
         return position + threshold >= height;
+    }
+
+    public sortClicked() {
+        this.sortDirection = this.sortDirection === "desc" ? "asc" : "desc";
+        this.currentPage = 0;
+        this.getAllPosts(true);
     }
 
 }
